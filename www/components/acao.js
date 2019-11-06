@@ -91,6 +91,7 @@ $(document).on("click","#cadEstadia",function(){
 });
 
 
+
 /*busca de proprietarios*/
 function listarProprietario(){
    $.ajax({
@@ -135,3 +136,99 @@ $(document).on("click","#buscarVeiculo",function(){
       }
     });
 });
+
+$(document).on("click","#buscarVeiculoSaida",function(){
+     var parametro ={
+      "placa":$("#placa").val()
+    };
+    
+    $.ajax({
+      type:"post",//como vou enviar os dados ao servidor
+      url:webservice+"busca-veiculo-saida.php",
+      data:parametro,
+      dataType:"json",
+      //caso esteja tudo certo executa esse codigo
+      success: function(data){
+        $("#proprietario").val(data.veiculo.proprietario);
+        $("#tipo").val(data.veiculo.tipo);
+        $("#estadia").val(data.veiculo.estadia);
+        $("#entrada").val(data.veiculo.entrada);
+      },
+      //caso algo esteja errado executa esse codigo
+      error: function(data){
+        navigator.notification.alert("Erro ao buscar registros!");
+      }
+    });
+});
+
+$(document).on("click","#fecharConta",function(){
+    var horaInicialCompleta = $("#entrada").val().split(":");
+    var horaEntrada = parseFloat(horaInicialCompleta[0]);
+    var minutoEntrada = parseFloat(horaInicialCompleta[1]);
+
+    var horaSaidaCompleta = $("#hrSaida").val().split(":");
+    var horaSaida = parseFloat(horaSaidaCompleta[0]);
+    var minutoSaida = parseFloat(horaSaidaCompleta[1]);
+    var valorGeral = 10;
+
+    if($("#tipo").val() == "carro"){
+       var totalHoras = ((horaSaida + (minutoSaida/60)) - (horaEntrada + (minutoEntrada/60)));
+       if(totalHoras >= 1){
+         totalHoras-=1;
+         valorGeral= 5 + (totalHoras * 3);
+       }
+
+    }else{
+      var totalHoras = ((horaSaida + (minutoSaida/60)) - (horaEntrada + (minutoEntrada/60)));
+       if(totalHoras >= 1){
+         totalHoras-=1;
+         valorGeral= 3 + (totalHoras * 2);
+       }
+    }
+    
+
+    $("#valor").val(valorGeral.toFixed(2));
+
+    var parametro ={
+      "estadia":$("#estadia").val(),
+      "valor":$("#valor").val(),
+      "saida":$("#hrSaida").val(),
+    };
+
+    $.ajax({
+      type:"post",//como vou enviar os dados ao servidor
+      url:webservice+"saida.php",
+      data:parametro,
+      //caso esteja tudo certo executa esse codigo
+      success: function(data){
+       alert("Saida de veiculo autorizada");
+      },
+      //caso algo esteja errado executa esse codigo
+      error: function(data){
+        navigator.notification.alert("Erro ao buscar registros!");
+      }
+    });
+});
+
+function listarSaidas(){
+  $.ajax({
+        type:"post", //como enviar
+        url:webservice+"estadias-finalizadas.php",
+        dataType:"json",
+        //se der certo
+        success: function(data){
+            var itemlista = "";
+            $.each(data.veiculo,function(i,dados){
+              itemlista += "<tr><td colspan='3'>Nome: "+dados.proprietario+"</td></tr>"; 
+              itemlista += "<tr><td>Placa: "+dados.placa+"</td>"; 
+              itemlista += "<td>Entr.: "+dados.entrada+"</td>";
+              itemlista += "<td>Saída: "+dados.saida+"</td></tr>";
+            });
+        $("#ListaSaida").html(itemlista);
+        },
+        //se der errado
+        error: function(data){
+             navigator.notification.alert(data);
+        }
+    });  
+}
